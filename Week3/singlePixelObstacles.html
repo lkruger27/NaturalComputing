@@ -126,10 +126,12 @@ function initializeGrid()
     }
 
                   // radius of our circles:
-	const rad = 5
+	const rad = 7
     
                   // we will have num_centres_but_sqrd^2 circles:
-    const num_centres_but_sqrd = 5
+    const num_centres_but_sqrd = 4
+    
+    const incr = Math.floor(this.C.extents[0] / num_centres_but_sqrd)
     
                   // creating the array of centers of the circles
                   // we will draw:
@@ -139,7 +141,7 @@ function initializeGrid()
         for (let idy = 0 ; idy != num_centres_but_sqrd ; ++idy )
         {
             centres[idx + num_centres_but_sqrd * idy] =
-                                [20 * idx + 10, 20 * idy + 10]
+                          [incr * idx + incr / 2, incr * idy + incr / 2]
         }
     }
 
