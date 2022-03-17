@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>SingleCell</title>
+<style type="text/css">
+body{
+		font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue",
+		 Helvetica, Arial, "Lucida Grande", sans-serif;
+	 padding : 15px;
+}
+td {
+	 padding: 10px;
+	 vertical-align: top;
+}
+</style>
+
+
+<script src="./artistoo.js"></script>
+<script src="./fpsmeter.min.js"></script>
+<script>
+"use strict"
+
+
+/*	----------------------------------
+	CONFIGURATION SETTINGS
+	----------------------------------
+*/
+
+  // defining this here will be usefull later:
+const field_size = [100, 100]
+
+let config =
+{
+
+	// Grid settings
+	field_size : field_size,
+	
+	// CPM parameters and configuration
+	conf :
+    {
+		// Basic CPM parameters
+		T : 20,								// CPM temperature
+		// Constraint parameters. Mostly these have the format of an array
+        // in which each element specifies the parameter value for one of
+        // the cellkinds on the grid. First value is always cellkind 0 (the
+        // background) and is often not used.
+				
+		// Adhesion parameters:
+		J: [[0,20,0], [20,0,0], [20,0,0]] ,
+		
+		// VolumeConstraint parameters
+		LAMBDA_V : [0,50,1],				// VolumeConstraint importance per cellkind
+		V : [0,200,1],						// Target volume of each cellkind
+		P : [0,180,0],
+		LAMBDA_P : [0,2,0],
+		MAX_ACT : [0,20,0],
+		LAMBDA_ACT: [0,200,0],
+		ACT_MEAN : "geometric",
+        
+          // the obstacle `cells' we forced to be exactly one pixel large,
+          // the other cells are allowed to have any size (bounded by the size of the simulation grid):
+		LAMBDA_VRANGE_MIN : [0,0,1],			// MIN/MAX volume for the hard 
+		LAMBDA_VRANGE_MAX : [0,field_size[0] * field_size[1],1]
+
+	},
+	
+	// Simulation setup and configuration
+	simsettings :
+    {
+	
+		// Cells on the grid
+		NRCELLS : [0,0],					// Number of cells to seed for all
+                                        // non-background cellkinds.
+		
+		// Visualization
+		CANVASCOLOR : "eaecef",
+		CELLCOLOR : ["000000","FF0000"],
+		ACTCOLOR : [true, false],
+		SHOWBORDERS : [true, true],
+		BORDERCOL : ["0000FF","FFFFFF"],
+		zoom : 4,						// zoom in on canvas with this factor
+
+	}
+}
+/*	---------------------------------- */
+let sim, meter
+
+
+function initialize()
+{
+	let custommethods = 
+    {
+	 	initializeGrid : initializeGrid
+	}
+	sim = new CPM.Simulation( config, custommethods )
+    
+      // adding the volume constraint:
+    let hardvolconstraint = new CPM.HardVolumeRangeConstraint( sim.C.conf )
+    sim.C.add( hardvolconstraint )
+    //sim.initializeGrid()
+    sim.runBurnin()
+	meter = new FPSMeter({left:"auto", right:"5px"})
+	step()
+}
+
+
+function step()
+{
+	sim.step()
+	meter.tick()
+	requestAnimationFrame( step )
+}
+
+/* The following custom methods will be added to the simulation object*/
+function initializeGrid()
+{
+
+	              // add the initializer if not already there
+	if( !this.helpClasses["gm"] ){ this.addGridManipulator() }
+
+                  // radius of our circles:
+	const rad = 7
+    
+                  // we will have num_centres_but_sqrd^2 circles:
+    const num_centres_but_sqrd = 3
+    
+    const incr = Math.floor(this.C.extents[0] / num_centres_but_sqrd)
+    
+                  // creating the array of centers of the circles
+                  // we will draw:
+    let centres = []
+    for (let idx = 0 ; idx != num_centres_but_sqrd ; ++idx )
+    {
+        for (let idy = 0 ; idy != num_centres_but_sqrd ; ++idy )
+        {
+            centres[idx + num_centres_but_sqrd * idy] =
+                          [incr * idx + incr / 2, incr * idy + incr / 2]
+        }
+    }
+
+
+                  // drawing the circles:
+                  // looping over all pixel values
+	for( let idx = 1 ; idx != this.C.extents[0] ; ++idx )
+    {
+		for( let idy = 1 ; idy != this.C.extents[1] ; ++idy )
+        {
+                  // looping over all centers
+            for ( const centre of centres )
+            {
+                  // filling in the circles:
+                if (Math.pow(idx - centre[0], 2) +
+                    Math.pow(idy - centre[1], 2) <
+                    Math.pow(rad, 2))
+                {
+                    this.gm.seedCellAt( 2, [idx, idy] )
+                }
+            }
+
+		}
+	}
+
+	// seed 1 cell
+	for( let i = 0; i < 12; i++){
+		this.gm.seedCell(1)
+	}
+}
+
+
+</script>
+</head>
+<body onload="initialize()">
+
+	<h1>8 moving cells with 9 obstacles cells</h1>
+    
+</body>
+</html>
