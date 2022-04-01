@@ -7,6 +7,7 @@ java -jar negsel2.jar -self english.train -n 10 -r 4 -c -l < tagalog.test > ./Cl
 # Languages, part 2
 for idx in {1..9}
 do
+      # timing both commands as a rough estimate of repetoire size
     time (java -jar negsel2.jar -self english.train -n 10 -r $idx -c -l < english.test > ./ClassifyingLanguagesFiles/englishtest_r${idx}.txt ;
     java -jar negsel2.jar -self english.train -n 10 -r $idx -c -l < tagalog.test > ./ClassifyingLanguagesFiles/tagalogtest_r${idx}.txt)
 done
